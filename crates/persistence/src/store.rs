@@ -124,6 +124,9 @@ pub trait Store {
         column: Column,
         prefix: &[u8],
     ) -> impl Iterator<Item = KeyValue> + 's;
+
+    /// Lists the column families the store currently holds.
+    fn columns(&self) -> Vec<Column>;
 }
 
 /// An ordered, in-memory [`Store`] for tests and early development.
@@ -185,6 +188,10 @@ impl Store for MemoryStore {
             .flat_map(|family| family.iter())
             .filter(move |(key, _)| key.starts_with(prefix.as_slice()))
             .map(|(key, value)| (key.clone(), value.clone()))
+    }
+
+    fn columns(&self) -> Vec<Column> {
+        self.families.keys().copied().collect()
     }
 }
 
