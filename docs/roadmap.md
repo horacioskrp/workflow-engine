@@ -1,7 +1,7 @@
 # Roadmap — étapes d'implémentation par phases
 
-Stratégie : **incrémentale, bottom-up, pas de big-bang**. On monte la pile depuis le
-stockage vers le moteur, chaque phase livre quelque chose de testable en isolation.
+Stratégie : **incrémentale, bottom-up**. On monte depuis le socle et la persistance
+vers les capacités métier, chaque phase livre quelque chose de testable en isolation.
 
 Légende : **DoD** = Definition of Done (critère de fin de phase).
 
@@ -9,170 +9,153 @@ Légende : **DoD** = Definition of Done (critère de fin de phase).
 
 ## Phase 0 — Socle & contrat  ·  *partiellement livré (scaffold)*
 
-**Objectif.** Un squelette qui compile, le contrat gRPC figé, les types de base, et un
-harnais de tests de conformité.
+**Objectif.** Un squelette qui compile, le contrat d'API figé, les types de base, un
+harnais de tests.
 
-**Crates.** `common`, `proto`, `model`, `gateway`, `broker`, `testkit`, `xtask`.
+**Crates.** `kernel`, `contracts`, `api`, `node`, `harness`, `xtask`.
 
 **Étapes.**
-1. ✅ Workspace Cargo, lints, édition 2024, DAG de crates, daemon `broker` qui démarre.
+1. ✅ Workspace Cargo (capacités), lints, édition 2024, DAG de crates, démon `node`.
 2. ✅ `proto/gateway.proto` (contrat client, package `workflow.v1`).
-3. ⬜ Câbler `tonic-build` dans `proto/build.rs` → générer les types gRPC ; exposer
-   `proto::gateway`.
-4. ⬜ Définir dans `model` les types fondateurs : `Record`, `Intent`, `ValueType`,
-   clés/positions, (dé)sérialisation (`serde` + un encodage binaire interne choisi).
-5. ⬜ Implémenter `gateway` : serveur `tonic` qui répond à `Topology` et accepte
+3. ⬜ Câbler `tonic-build` dans `contracts/build.rs` → générer les types gRPC.
+4. ⬜ `kernel` : identifiants typés (`InstanceId`, `TaskId`…), horloge abstraite,
+   helpers de télémétrie.
+5. ⬜ `api` : serveur `tonic` répondant à `Topology` et acceptant
    `DeployProcess` / `CreateProcessInstance` contre un **état en mémoire** (stub).
-6. ⬜ `testkit` : horloge déterministe + fakes ; premier test d'intégration
-   bout-en-bout gateway↔stub (**M-INTEGRATION-TESTS**).
-7. ⬜ `xtask codegen` : régénère les bindings proto.
+6. ⬜ `harness` : horloge déterministe + fakes ; premier test d'intégration
+   bout-en-bout (**M-INTEGRATION-TESTS**).
+7. ⬜ `xtask codegen` : régénère les bindings.
 
-**Dépendances externes introduites.** `tonic`, `prost`, `tonic-build`, `rmp-serde`.
+**Dépendances externes introduites.** `tonic`, `prost`, `tonic-build`.
 
 **DoD.** `cargo test` vert ; un client gRPC obtient une réponse à `Topology` et peut
 déposer/créer une instance « en mémoire ». Contrat gRPC gelé.
 
-**Risques.** Choix de l'encodage interne des records (impacte tout le reste).
+---
+
+## Phase 1 — Persistance
+
+**Objectif.** Un socle de stockage durable (état + historique), testable isolément.
+
+**Crates.** `persistence`.
+
+**Étapes.**
+1. ⬜ `persistence::store` : état clé/valeur transactionnel (sur backend embarqué),
+   familles typées, itérateurs.
+2. ⬜ `persistence::history` : historique ordonné et append-only des événements,
+   lecture séquentielle, reprise sur position.
+3. ⬜ `persistence::snapshot` : snapshot cohérent de l'état + position d'historique
+   associée ; compaction liée.
+4. ⬜ Tests : « rejouer l'historique reconstruit exactement l'état » ; recovery après
+   arrêt brutal simulé.
+
+**Dépendances externes introduites.** `rocksdb` (toolchain C au build — géré via Docker/WSL).
+
+**DoD.** Écrire/relire l'historique ; prendre/restaurer un snapshot ; tests de recovery verts.
 
 ---
 
-## Phase 1 — Couche stockage
+## Phase 2 — Coordination & cluster
 
-**Objectif.** Un log durable et un store d'état, testables hors cluster.
+**Objectif.** Répliquer l'état persisté sur plusieurs nodes avec un primaire élu.
 
-**Crates.** `journal`, `state`.
-
-**Étapes.**
-1. ⬜ `journal` : écriture append-only en segments, index des positions, lecture
-   séquentielle, troncature, fsync/durabilité, rotation de segments.
-2. ⬜ `state` : abstraction au-dessus de RocksDB (familles de colonnes typées,
-   transactions, itérateurs).
-3. ⬜ `state::snapshot` : prise de snapshot cohérente de l'état + métadonnées
-   (position du log correspondante).
-4. ⬜ Compaction : lier snapshot ↔ troncature du journal.
-5. ⬜ Tests : propriété « rejouer le log reconstruit exactement l'état » ; crash-recovery
-   (réouverture après arrêt brutal simulé).
-
-**Dépendances externes introduites.** `rocksdb` (nécessite un toolchain C/clang au
-build — déjà géré côté Docker/WSL).
-
-**DoD.** Écrire/relire/tronquer un log ; prendre/restaurer un snapshot ; tests de
-recovery verts.
-
-**Risques.** Durabilité (ordre des fsync) ; coût du build de `rocksdb`.
-
----
-
-## Phase 2 — Consensus & cluster
-
-**Objectif.** Répliquer une partition sur plusieurs nœuds avec un leader élu.
-
-**Crates.** `transport`, `cluster`.
+**Crates.** `coordination` (+ transport interne).
 
 **Étapes.**
-1. ⬜ Spike `openraft` : POC log + snapshot + élection sur 3 nœuds en mémoire.
-2. ⬜ `transport` : messagerie framée entre brokers (tokio + rustls), (dé)sérialisation
-   des messages Raft.
-3. ⬜ `cluster` : intégrer `openraft` derrière une interface maison ; brancher le
-   `RaftLogStorage` sur `journal` et le `RaftStateMachine` sur `state`/`engine`.
-4. ⬜ Membership : découverte des nœuds, join/leave, N partitions par nœud.
-5. ⬜ Tests : élection, réplication, perte de leader, rattrapage d'un follower via
-   snapshot.
+1. ⬜ Spike `openraft` : POC log + snapshot + élection sur 3 nodes.
+2. ⬜ Messagerie inter-nodes (tokio + rustls) pour les échanges de réplication.
+3. ⬜ `coordination::replication` : brancher le stockage de log/snapshot de `openraft`
+   sur `persistence`.
+4. ⬜ `coordination::membership` : découverte, join/leave, attribution des tranches de
+   charge par node.
+5. ⬜ Tests : élection, réplication, perte du primaire, rattrapage par snapshot.
 
 **Dépendances externes introduites.** `openraft`, `rustls`.
 
-**DoD.** Un cluster 3 nœuds réplique une partition, survit à la perte du leader, et un
-nouveau follower se resynchronise.
+**DoD.** Un cluster 3 nodes réplique une tranche, survit à la perte du primaire, et un
+nouveau réplica se resynchronise.
 
-**Risques.** ⚠️ Le plus gros risque du projet : exactitude du consensus = intégrité des
-données. Intégration snapshot/membership délicate.
-
----
-
-## Phase 3 — Moteur mono-partition
-
-**Objectif.** Exécuter réellement des processus sur une partition.
-
-**Crates.** `engine` (dépend de `journal` pour lire le log et de `state`), `feel`.
-
-**Étapes.**
-1. ⬜ **Décision FEEL** (début de phase) : implémentation Rust vs binding vs
-   sous-ensemble. Débloque `feel`.
-2. ⬜ `engine::processor` : boucle du stream processor déterministe (consomme le log,
-   applique, écrit état + records de suivi) ; contrôle strict des sources de
-   non-déterminisme (horloge via `testkit`, pas de flottants/itération non ordonnée).
-3. ⬜ Comportements BPMN d'un **sous-ensemble minimal** : start/end event, séquence,
-   service task, exclusive gateway.
-4. ⬜ Contextes métier : `process` (instances), `job`, `deployment`, `variable`.
-5. ⬜ `feel` : évaluer les expressions de variables/conditions du sous-ensemble.
-6. ⬜ Élargir : message/timer/incident, parallel/event-based gateway, sous-process.
-7. ⬜ Tests : rejeu déterministe (même log → même état), couverture par élément.
-
-**Dépendances externes introduites.** éventuellement un crate de parsing pour `feel`.
-
-**DoD.** Déployer un processus simple (start → service task → end), créer une instance,
-activer/compléter un job, la mener à terme ; rejeu déterministe prouvé par test.
-
-**Risques.** FEEL ; garantir le déterminisme à grande échelle.
+**Risques.** ⚠️ Risque n°1 du projet : l'exactitude de la coordination = intégrité des
+données.
 
 ---
 
-## Phase 4 — Gateway complet, client & exporters
+## Phase 3 — Capacités métier
 
-**Objectif.** Exposer toute l'API aux clients et sortir les données.
+**Objectif.** Exécuter réellement des processus.
 
-**Crates.** `gateway`, `client`, `exporter`, `cli`.
+**Crates.** `workflow`, `expr`, `scheduling`, `tasks`, `messaging`.
 
 **Étapes.**
-1. ⬜ `gateway` : implémenter tous les RPC du contrat, router vers le leader de la bonne
-   partition, gérer le streaming `ActivateJobs` (long-poll) et le back-pressure.
-2. ⬜ `client` : SDK async (job workers : poll + complete/fail) (**M-ASYNC-FN**).
-3. ⬜ `exporter` : trait `Exporter` + implémentation (ex. index de recherche) derrière
-   une feature (**M-FEATURES-ADDITIVE**) ; suivi du log committé, reprise sur position.
-4. ⬜ `cli` : commandes `topology`, `deploy`, `create`, `status`.
-5. ⬜ `broker` : assembler cluster + partitions + engine + gateway + exporter ;
-   configuration (fichier/env) ; arrêt gracieux.
-6. ⬜ Docker : `EXPOSE` du port gRPC + `docker run -p` ; (option) `docker compose` 3
-   nœuds.
+1. ⬜ **Décision `expr`** (début de phase) : implémentation vs binding vs sous-ensemble.
+2. ⬜ `workflow::execution` : moteur d'exécution **déterministe** (lit l'historique,
+   applique, écrit état + événements) ; contrôle strict du non-déterminisme (horloge
+   via `harness`).
+3. ⬜ `workflow::model` + `activity` : sous-ensemble minimal (début/fin, séquence,
+   tâche de service, branchement exclusif).
+4. ⬜ `tasks` : création de work items + activation par les workers.
+5. ⬜ `scheduling` : timers/échéances déclenchant la reprise d'exécution.
+6. ⬜ `messaging` : abonnements + corrélation de messages.
+7. ⬜ `expr` : évaluer conditions et expressions de variables.
+8. ⬜ Élargir : branchements parallèle/événementiel, sous-processus, incidents.
+9. ⬜ Tests : rejeu déterministe (même historique → même état) ; couverture par élément.
 
-**Dépendances externes introduites.** client/exporter spécifiques (ex. client HTTP).
+**DoD.** Déployer un processus simple, créer une instance, activer/compléter une tâche,
+la mener à terme ; rejeu déterministe prouvé par test.
 
-**DoD.** Un worker externe se connecte au `broker` conteneurisé, traite des jobs
-bout-en-bout ; les records exportés sont visibles dans le système cible.
+**Risques.** `expr` ; garantir le déterminisme à grande échelle.
+
+---
+
+## Phase 4 — API complète, client, CLI & feed
+
+**Objectif.** Exposer toute l'API et sortir les données.
+
+**Crates.** `api`, `sdk`, `ctl`, `feed`.
+
+**Étapes.**
+1. ⬜ `api` : tous les RPC du contrat, routage vers le node responsable, streaming
+   d'activation de tâches (long-poll), back-pressure.
+2. ⬜ `sdk` : client async (workers : poll + complete/fail) (**M-ASYNC-FN**).
+3. ⬜ `feed` : trait `Sink` + implémentation (ex. index de recherche) derrière une
+   feature (**M-FEATURES-ADDITIVE**) ; reprise sur position.
+4. ⬜ `ctl` : commandes `topology`, `deploy`, `create`, `status`.
+5. ⬜ `node` : assembler coordination + capacités + api + feed ; configuration ; arrêt
+   gracieux.
+6. ⬜ Docker : `EXPOSE` du port gRPC + `docker run -p` ; (option) compose multi-nodes.
+
+**DoD.** Un worker externe se connecte au `node` conteneurisé, traite des tâches
+bout-en-bout ; l'historique exporté est visible dans le système cible.
 
 ---
 
 ## Phase 5 — Parité, durcissement & performance
 
-**Objectif.** Rendre le moteur crédible en production.
-
 **Crates.** toutes.
 
 **Étapes.**
-1. ⬜ Élargir la couverture BPMN (sous-process d'événement, compensation, multi-instance…).
-2. ⬜ Chaos testing : pannes réseau, pertes de nœuds, partitions réseau.
-3. ⬜ Performance : identifier/profiler le hot path tôt (**M-HOTPATH**), optimiser
-   débit (**M-THROUGHPUT**), hasher rapide (**M-FAST-HASHER**), capacités initiales
-   (**M-INITIAL-CAPACITY**), points de yield (**M-YIELD-POINTS**) ; benchmarks
-   `criterion`.
-3. ⬜ Allocateur `mimalloc` activé en prod (**M-MIMALLOC-APPS**), `target-cpu` réglé
-   (**M-TARGET-CPU**).
-4. ⬜ Durcissement : `cargo deny` (licences/CVE), fuzzing des parsers (model, feel).
+1. ⬜ Élargir la couverture du modèle de processus.
+2. ⬜ Chaos testing : pannes réseau, pertes de nodes, partitions réseau.
+3. ⬜ Performance : hot path tôt (**M-HOTPATH**), débit (**M-THROUGHPUT**), hasher
+   rapide (**M-FAST-HASHER**), capacités initiales (**M-INITIAL-CAPACITY**), points de
+   yield (**M-YIELD-POINTS**) ; benchmarks `criterion`.
+4. ⬜ `mimalloc` en prod (**M-MIMALLOC-APPS**), `target-cpu` réglé (**M-TARGET-CPU**).
+5. ⬜ `cargo deny` (licences/CVE), fuzzing des parsers (`expr`, modèle).
 
-**DoD.** Benchmarks publiés, tests de chaos verts, couverture BPMN documentée.
+**DoD.** Benchmarks publiés, tests de chaos verts, couverture documentée.
 
 ---
 
-## Dépendances transverses entre phases
+## Dépendances entre phases
 
 ```
-Phase 0 (contrat, types) ─┬─► Phase 1 (stockage) ─► Phase 2 (consensus) ─┐
-                          └─────────────────────► Phase 3 (moteur) ◄─────┘
-                                                        │
-                                   Phase 4 (gateway/client/exporter) ◄────┘
-                                                        │
-                                              Phase 5 (parité/perf)
+Phase 0 (contrat, socle) ─► Phase 1 (persistance) ─► Phase 2 (coordination) ─┐
+                            └──────────────────────► Phase 3 (capacités) ◄────┘
+                                                            │
+                                   Phase 4 (api/sdk/ctl/feed) ◄──┘
+                                                            │
+                                                  Phase 5 (parité/perf)
 ```
 
-Phase 3 (moteur mono-partition) peut démarrer **en parallèle** de Phase 2 en utilisant
-un log local non répliqué (fourni par `testkit`), puis se brancher sur le vrai cluster.
+Phase 3 (capacités) peut démarrer **en parallèle** de Phase 2 avec une persistance
+locale non répliquée (fournie par `harness`), puis se brancher sur le vrai cluster.

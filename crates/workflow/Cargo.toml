@@ -1,0 +1,18 @@
+[package]
+name = "workflow"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kernel = { workspace = true }
+persistence = { workspace = true }
+expr = { workspace = true }
+scheduling = { workspace = true }
+tasks = { workspace = true }
+messaging = { workspace = true }
+serde = { workspace = true }

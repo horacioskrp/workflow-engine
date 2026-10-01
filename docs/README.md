@@ -4,53 +4,36 @@ Documentation d'ingénierie du moteur de workflow (Rust).
 
 | Document | Contenu |
 |---|---|
-| [architecture.md](architecture.md) | **Constitution** du projet : vision, couches, les 15 crates (gros briques), graphe de dépendances, modèle d'exécution runtime, décisions structurantes, points durs. |
-| [roadmap.md](roadmap.md) | **Toutes les étapes d'implémentation**, phase par phase (0 → 5) : objectifs, crates touchées, étapes concrètes, livrables (Definition of Done), dépendances externes, risques. |
+| [architecture.md](architecture.md) | **Constitution** : vision, capacités & supports, les 15 crates, graphe de dépendances, modèle d'exécution runtime, décisions structurantes, points durs. |
+| [roadmap.md](roadmap.md) | **Toutes les étapes d'implémentation**, phase par phase (0 → 5) : objectifs, crates, étapes concrètes, livrables (DoD), dépendances externes, risques. |
 
 ## État actuel
 
 **Phase 0 — scaffold livré.** Le workspace Cargo (16 crates), le câblage, les lints,
-le contrat gRPC (`proto/gateway.proto`) et un daemon `broker` qui démarre sont en
-place. Les crates sont des stubs documentés ; aucune logique métier encore.
+le contrat gRPC (`proto/gateway.proto`) et un démon `node` qui démarre sont en place.
+Les crates sont des stubs documentés ; aucune logique métier encore. Le projet compile
+et s'exécute via Docker (voir le [README racine](../README.md)).
 
-Le projet compile et s'exécute via Docker (voir le [README racine](../README.md)).
+## Principe d'organisation
 
-## Fidélité au projet source
+Découpage **par capacité métier** (et non par couches d'infrastructure) :
 
-L'architecture et les phases ont été vérifiées contre les `pom.xml` réels du projet
-Java d'origine. Correspondance des modules → crates :
+- **Capacités** : `workflow` (exécution), `scheduling` (timers), `tasks` (work items),
+  `messaging` (signaux/corrélation).
+- **Supports** : `persistence` (état+historique), `coordination` (cluster/réplication),
+  `api` (gRPC), `feed` (flux sortant), `expr` (expressions).
+- **Socle/bordure** : `kernel`, `contracts`, `node` (démon), `ctl` (CLI), `sdk`,
+  `harness`.
 
-| Module(s) source | Crate(s) |
-|---|---|
-| `protocol`, `protocol-impl`, `msgpack-*`, `bpmn-model`, `protocol-jackson` | `model` |
-| `expression-language` | `feel` |
-| `journal`, `logstreams`, `dispatcher` | `journal` |
-| `zb-db` (`db`), `snapshot` | `state` |
-| `atomix` | `cluster` + `transport` |
-| `engine` (`workflow-engine`) | `engine` |
-| `gateway`, `gateway-protocol`, `gateway-protocol-impl` | `gateway` + `proto` |
-| `exporters`, `exporter-api` | `exporter` |
-| `broker`, `dist` | `broker` |
-| `clients` (java/go/oauth2) | `client` + `cli` |
-| `util`, `test-util`, `protocol-test-util` | `common` + `testkit` |
-| `build-tools` | `xtask` |
-| `monitor` (monitoring) | transverse : observabilité (`tracing`/metrics), pas une brique |
-| `bom`, `parent`, `qa`, `samples`, `benchmarks`, `docker`, `docs` | infra / tests / non applicable |
-
-Deux dépendances alignées sur le source après vérification :
-- `engine` → `journal` : le stream processor **lit** le log committé (le source :
-  `engine` dépend de `logstreams`).
-- `state` ne dépend **pas** de `model` : c'est un store KV générique (le source :
-  `zb-db` est générique). Les vues d'état typées vivent dans `engine::state`.
+Vocabulaire et découpage **propriétaires** : conçus pour ce projet, indépendamment de
+tout moteur existant.
 
 ## Rappels de cadrage
 
-- **Compatibilité visée : API-only.** On reproduit le contrat client (gRPC) mais le
-  format interne (log, snapshots, protocole réseau) est le nôtre — pas de migration
-  en place depuis un système existant. C'est le choix le plus réaliste.
-- **Conventions** : Pragmatic Rust Guidelines (ids `M-*` cités dans les docs et le
-  code). Édition 2024, `unsafe` interdit par défaut, erreurs canoniques en structs,
-  `anyhow` dans les binaires.
-- Les trois **points durs** connus : le consensus (Raft), le langage d'expression
-  (FEEL), et le **déterminisme** du stream processor. Détaillés dans
+- **Compatibilité visée : API-only.** On reproduit un contrat client gRPC ; les formats
+  internes (historique, snapshots, protocole réseau) sont les nôtres.
+- **Conventions** : Pragmatic Rust Guidelines (ids `M-*`). Édition 2024, `unsafe`
+  interdit par défaut, erreurs canoniques en structs, `anyhow` dans les binaires.
+- Trois **points durs** : coordination/réplication, langage d'expression (`expr`), et
+  **déterminisme** de `workflow`. Détaillés dans
   [architecture.md](architecture.md#points-durs).

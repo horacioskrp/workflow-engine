@@ -1,0 +1,15 @@
+//! Process model and deterministic execution semantics.
+//!
+//! The heart: advances process instances deterministically, driving tasks, timers and messages.
+
+mod error;
+
+pub use error::Error;
+
+/// A specialized [`Result`] for this crate's fallible operations.
+pub type Result<T, E = Error> = core::result::Result<T, E>;
+
+pub mod model;
+pub mod execution;
+pub mod activity;
+pub mod incident;

@@ -2,7 +2,8 @@
 #
 # Virtual workspace: shared settings and dependency versions live here and are
 # inherited by member crates (M-CARGO-WORKSPACE, M-CRATES-IN-WORKSPACE). All
-# library crates are siblings under `crates/` (M-CRATES-FLAT-FOLDER).
+# crates are siblings under `crates/` (M-CRATES-FLAT-FOLDER); they are organized
+# by capability (workflow, scheduling, tasks, messaging) plus supporting crates.
 
 [workspace]
 resolver = "3"             # virtual workspaces don't infer this from edition (M-LATEST-EDITION)
@@ -17,8 +18,8 @@ repository = "https://example.invalid/workflow-engine"
 
 # --- Lints applied to every crate (M-STATIC-VERIFICATION, M-LINT-OVERRIDE-EXPECT) ---
 [workspace.lints.rust]
-unsafe_code = "forbid"     # M-UNSAFE: no unsafe by default; a crate needing FFI relaxes this
-missing_docs = "warn"      # documentation is expected on public items (M-MODULE-DOCS)
+unsafe_code = "forbid"
+missing_docs = "warn"
 
 [workspace.lints.clippy]
 all = "warn"
@@ -27,19 +28,19 @@ pedantic = "warn"
 # --- Dependency versions, declared once (M-CARGO-WORKSPACE) -----------------------
 [workspace.dependencies]
 # Internal crates — intra-workspace deps resolve through here (M-CRATES-IN-WORKSPACE).
-common    = { path = "crates/common",    version = "0.1.0" }
-proto     = { path = "crates/proto",     version = "0.1.0" }
-model     = { path = "crates/model",     version = "0.1.0" }
-feel      = { path = "crates/feel",      version = "0.1.0" }
-journal   = { path = "crates/journal",   version = "0.1.0" }
-state     = { path = "crates/state",     version = "0.1.0" }
-transport = { path = "crates/transport", version = "0.1.0" }
-cluster   = { path = "crates/cluster",   version = "0.1.0" }
-engine    = { path = "crates/engine",    version = "0.1.0" }
-exporter  = { path = "crates/exporter",  version = "0.1.0" }
-gateway   = { path = "crates/gateway",   version = "0.1.0" }
-client    = { path = "crates/client",    version = "0.1.0" }
-testkit   = { path = "crates/testkit",   version = "0.1.0" }
+kernel       = { path = "crates/kernel",       version = "0.1.0" }
+contracts    = { path = "crates/contracts",    version = "0.1.0" }
+expr         = { path = "crates/expr",         version = "0.1.0" }
+persistence  = { path = "crates/persistence",  version = "0.1.0" }
+scheduling   = { path = "crates/scheduling",   version = "0.1.0" }
+tasks        = { path = "crates/tasks",        version = "0.1.0" }
+messaging    = { path = "crates/messaging",    version = "0.1.0" }
+workflow     = { path = "crates/workflow",     version = "0.1.0" }
+coordination = { path = "crates/coordination", version = "0.1.0" }
+feed         = { path = "crates/feed",         version = "0.1.0" }
+api          = { path = "crates/api",          version = "0.1.0" }
+sdk          = { path = "crates/sdk",          version = "0.1.0" }
+harness      = { path = "crates/harness",      version = "0.1.0" }
 
 # Third-party — wired into the scaffold now (all pure-Rust: no C toolchain needed).
 serde              = { version = "1",    features = ["derive"] }
@@ -48,16 +49,16 @@ tokio              = { version = "1",    default-features = false }
 tracing            = { version = "0.1" }
 tracing-subscriber = { version = "0.3",  default-features = false }
 
-# Third-party — reserved for upcoming phases. Versions are pinned here for a single
-# source of truth; these are NOT referenced by any crate yet, so they are not
-# compiled until a member opts in with `<dep>.workspace = true`.
-tonic       = { version = "0.12", default-features = false }   # gRPC server/client (Phase 4)
+# Third-party — reserved for upcoming phases. Versions pinned here for a single
+# source of truth; not referenced by any crate yet, so not compiled until a
+# member opts in with `<dep>.workspace = true`.
+tonic       = { version = "0.12", default-features = false }   # gRPC server/client
 prost       = { version = "0.13", default-features = false }   # protobuf runtime
 tonic-build = { version = "0.12", default-features = false }   # proto codegen (build-dep)
-rmp-serde   = { version = "1" }                                # MessagePack variables
-rocksdb     = { version = "0.22", default-features = false }   # state store (Phase 1) — needs clang
-openraft    = { version = "0.9",  default-features = false }   # consensus (Phase 2)
-rustls      = { version = "0.23", default-features = false }   # TLS for transport
+rmp-serde   = { version = "1" }                                # MessagePack payloads
+rocksdb     = { version = "0.22", default-features = false }   # persistence backend — needs clang
+openraft    = { version = "0.9",  default-features = false }   # coordination/replication
+rustls      = { version = "0.23", default-features = false }   # TLS
 thiserror   = { version = "2" }                                # error derive where a struct is overkill
-mimalloc    = { version = "0.1",  default-features = false }   # allocator for the daemon — needs a C compiler
+mimalloc    = { version = "0.1",  default-features = false }   # node allocator — needs a C compiler
 criterion   = { version = "0.5",  default-features = false }   # benchmarks
