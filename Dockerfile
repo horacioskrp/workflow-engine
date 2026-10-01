@@ -6,7 +6,11 @@
 FROM rust:1-slim AS build
 WORKDIR /src
 
-# Leverage layer caching: copy manifests first, then sources.
+# protoc is required by tonic-build to compile proto/gateway.proto.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends protobuf-compiler \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY . .
 RUN cargo build --release --package node
 

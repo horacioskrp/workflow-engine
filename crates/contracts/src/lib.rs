@@ -1,10 +1,12 @@
 //! Generated gRPC and protobuf types for the engine API.
 //!
-//! The service contract lives in `proto/gateway.proto` at the workspace root.
-//! Code generation is not wired yet; `build.rs` is a no-op placeholder so the
-//! workspace builds without `protoc`. Phase 0 replaces it with `tonic-build`.
+//! Compiled from `proto/gateway.proto` (package `workflow.v1`) by `build.rs`
+//! using tonic-build, and included here. Downstream crates use `contracts::v1`:
+//! the message types, the `gateway_server::Gateway` service trait plus
+//! `GatewayServer`, and the `gateway_client::GatewayClient`.
 
-// TODO(phase-0): expose generated modules, e.g.
-// pub mod engine {
-//     tonic::include_proto!("workflow.v1");
-// }
+/// Types generated from the `workflow.v1` gateway contract.
+#[allow(clippy::all, clippy::pedantic, missing_docs, reason = "generated code")]
+pub mod v1 {
+    tonic::include_proto!("workflow.v1");
+}

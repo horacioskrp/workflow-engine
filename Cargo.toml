@@ -49,12 +49,14 @@ tokio              = { version = "1",    default-features = false }
 tracing            = { version = "0.1" }
 tracing-subscriber = { version = "0.3",  default-features = false }
 
+# gRPC stack — wired in Phase 0 (contracts). Defaults give codegen + transport.
+tonic       = { version = "0.12" }   # gRPC server/client + generated traits
+prost       = { version = "0.13" }   # protobuf runtime (messages)
+tonic-build = { version = "0.12" }   # proto → Rust codegen (build-dependency)
+
 # Third-party — reserved for upcoming phases. Versions pinned here for a single
 # source of truth; not referenced by any crate yet, so not compiled until a
 # member opts in with `<dep>.workspace = true`.
-tonic       = { version = "0.12", default-features = false }   # gRPC server/client
-prost       = { version = "0.13", default-features = false }   # protobuf runtime
-tonic-build = { version = "0.12", default-features = false }   # proto codegen (build-dep)
 rmp-serde   = { version = "1" }                                # MessagePack payloads
 rocksdb     = { version = "0.22", default-features = false }   # persistence backend — needs clang
 openraft    = { version = "0.9",  default-features = false }   # coordination/replication

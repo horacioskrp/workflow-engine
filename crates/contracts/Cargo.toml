@@ -9,3 +9,8 @@ license.workspace = true
 workspace = true
 
 [dependencies]
+tonic = { workspace = true }
+prost = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
