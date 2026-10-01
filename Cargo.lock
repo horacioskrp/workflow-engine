@@ -24,6 +24,9 @@ dependencies = [
  "contracts",
  "kernel",
  "tasks",
+ "tokio",
+ "tokio-stream",
+ "tonic",
  "workflow",
 ]
 
@@ -587,6 +590,7 @@ dependencies = [
  "scheduling",
  "tasks",
  "tokio",
+ "tonic",
  "tracing",
  "tracing-subscriber",
  "workflow",

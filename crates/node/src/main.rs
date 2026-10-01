@@ -7,13 +7,27 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use anyhow::Result;
+use api::GatewayService;
+use tonic::transport::Server;
+
+/// Address the gRPC gateway listens on (fixed for Phase 0).
+const LISTEN_ADDR: &str = "0.0.0.0:26500";
 
 #[tokio::main]
 async fn main() -> Result<()> {
     init_telemetry();
-    tracing::info!(version = env!("CARGO_PKG_VERSION"), "node starting");
-    // TODO(phase-0): load config, then start persistence, coordination,
-    // the workflow capabilities and the API.
+    let addr = LISTEN_ADDR.parse()?;
+    tracing::info!(
+        version = env!("CARGO_PKG_VERSION"),
+        %addr,
+        "node starting; serving gateway API"
+    );
+    // TODO(phase-0+): load config, then start persistence, coordination and the
+    // workflow capabilities behind the gateway.
+    Server::builder()
+        .add_service(GatewayService::server())
+        .serve(addr)
+        .await?;
     Ok(())
 }
 

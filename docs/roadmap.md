@@ -24,8 +24,10 @@ harnais de tests, la CI et le flux gitflow.
    + test, avec `protoc`) + premiers tests.
 5. ⬜ `kernel` : identifiants typés (`InstanceId`, `TaskId`…), horloge abstraite,
    helpers de télémétrie.
-6. ⬜ `api` : serveur `tonic` répondant à `Topology` et acceptant
-   `DeployProcess` / `CreateProcessInstance` contre un **état en mémoire** (stub).
+6. ✅ `api` : service `tonic` implémentant le trait `Gateway` — `Topology` répond
+   depuis un **état en mémoire** (cluster 1 nœud / 1 partition), les autres RPC
+   renvoient `unimplemented`. `node` sert l'API sur `0.0.0.0:26500`. Test unitaire
+   async de `Topology`.
 7. ⬜ `harness` : horloge déterministe + fakes ; premier test d'intégration
    bout-en-bout (**M-INTEGRATION-TESTS**).
 8. ⬜ `xtask codegen` : régénère les bindings.
