@@ -11,3 +11,4 @@ workspace = true
 [dependencies]
 kernel = { workspace = true }
 serde = { workspace = true }
+rmp-serde = { workspace = true }

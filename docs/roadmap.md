@@ -49,8 +49,11 @@ reporté : les capacités réelles arrivent en Phase 3.)
 **Crates.** `persistence`.
 
 **Étapes.**
-1. ⬜ `persistence::store` : état clé/valeur transactionnel (sur backend embarqué),
-   familles typées, itérateurs.
+1. 🟡 `persistence::store` : seam `Store` (trait) + `Column` (familles) + `WriteBatch`
+   (écritures atomiques transactionnelles) + **itérateurs** ordonnés paresseux
+   (`scan`, `scan_prefix`) + **familles typées** `TypedColumn<K,V>` (serde/MessagePack :
+   `get`/`put`/`delete`/`iter`) ; impl **en mémoire** `MemoryStore` (BTreeMap), testée.
+   **Reste** : backend durable (increment transverse de fin de phase).
 2. 🟡 `persistence::history` : seam `History` (trait) + `Position`/`HistoryEntry` +
    impl **en mémoire** `MemoryHistory` (append monotone, `read_from`, `last_position`),
    testés. **Reste** : backend durable (segments sur disque, fsync, reprise après crash).
