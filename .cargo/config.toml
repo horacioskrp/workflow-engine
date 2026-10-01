@@ -1,0 +1,9 @@
+# `cargo xtask <task>` → runs the workspace automation crate.
+[alias]
+xtask = "run --package xtask --"
+
+# M-TARGET-CPU: applications should target the highest viable CPU of the
+# deployment hardware. Keep this commented in dev (portable builds); enable and
+# tune it for production images. `x86-64-v3` ≈ Haswell+ / most cloud VMs.
+# [build]
+# rustflags = ["-C", "target-cpu=x86-64-v3"]

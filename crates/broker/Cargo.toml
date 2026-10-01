@@ -1,0 +1,29 @@
+[package]
+name = "broker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Opt-in: needs a C toolchain to build the mimalloc allocator.
+mimalloc = ["dep:mimalloc"]
+
+[dependencies]
+common    = { workspace = true }
+journal   = { workspace = true }
+state     = { workspace = true }
+transport = { workspace = true }
+cluster   = { workspace = true }
+engine    = { workspace = true }
+exporter  = { workspace = true }
+gateway   = { workspace = true }
+anyhow             = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+tokio              = { workspace = true, features = ["rt-multi-thread", "macros"] }
+mimalloc           = { workspace = true, optional = true }

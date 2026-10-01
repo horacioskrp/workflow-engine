@@ -1,0 +1,13 @@
+# cargo-deny configuration — supply-chain and license gate.
+# Run: cargo deny check   (install: cargo install cargo-deny)
+# Directly supports the audit's call to clarify licensing (AUDIT §7).
+
+[advisories]
+version = 2
+
+[licenses]
+version = 2
+allow = ["Apache-2.0", "MIT", "BSD-3-Clause", "ISC", "Unicode-3.0"]
+
+[bans]
+multiple-versions = "warn"

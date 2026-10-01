@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+// Client-facing gateway API for the workflow engine (working title).
+// Authored for this project; not derived from any third-party schema.
+package workflow.v1;
+
+service Gateway {
+  // Returns cluster topology: brokers, partitions and leadership.
+  rpc Topology(TopologyRequest) returns (TopologyResponse);
+
+  // Deploys one or more process definitions.
+  rpc DeployProcess(DeployProcessRequest) returns (DeployProcessResponse);
+
+  // Creates a new process instance from a deployed definition.
+  rpc CreateProcessInstance(CreateProcessInstanceRequest) returns (CreateProcessInstanceResponse);
+
+  // Streams activated jobs to a worker (server-streaming long-poll).
+  rpc ActivateJobs(ActivateJobsRequest) returns (stream ActivateJobsResponse);
+
+  // Completes a previously activated job.
+  rpc CompleteJob(CompleteJobRequest) returns (CompleteJobResponse);
+
+  // Publishes a message for correlation with a waiting process instance.
+  rpc PublishMessage(PublishMessageRequest) returns (PublishMessageResponse);
+}
+
+message TopologyRequest {}
+
+message BrokerInfo {
+  int32 node_id = 1;
+  string host = 2;
+  int32 port = 3;
+}
+
+message TopologyResponse {
+  repeated BrokerInfo brokers = 1;
+  int32 cluster_size = 2;
+  int32 partitions_count = 3;
+  int32 replication_factor = 4;
+}
+
+message ProcessResource {
+  string name = 1;
+  bytes definition = 2;
+}
+
+message DeployProcessRequest {
+  repeated ProcessResource resources = 1;
+}
+
+message DeployProcessResponse {
+  int64 key = 1;
+}
+
+message CreateProcessInstanceRequest {
+  string process_id = 1;
+  int32 version = 2;
+  // Process variables, encoded payload (encoding decided in a later phase).
+  bytes variables = 3;
+}
+
+message CreateProcessInstanceResponse {
+  int64 process_instance_key = 1;
+}
+
+message ActivateJobsRequest {
+  string job_type = 1;
+  string worker = 2;
+  int32 max_jobs = 3;
+}
+
+message ActivatedJob {
+  int64 key = 1;
+  string type = 2;
+  bytes variables = 3;
+}
+
+message ActivateJobsResponse {
+  repeated ActivatedJob jobs = 1;
+}
+
+message CompleteJobRequest {
+  int64 job_key = 1;
+  bytes variables = 2;
+}
+
+message CompleteJobResponse {}
+
+message PublishMessageRequest {
+  string name = 1;
+  string correlation_key = 2;
+  bytes variables = 3;
+}
+
+message PublishMessageResponse {
+  int64 key = 1;
+}
