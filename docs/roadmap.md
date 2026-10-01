@@ -7,28 +7,32 @@ Légende : **DoD** = Definition of Done (critère de fin de phase).
 
 ---
 
-## Phase 0 — Socle & contrat  ·  *partiellement livré (scaffold)*
+## Phase 0 — Socle & contrat  ·  *en cours*
 
 **Objectif.** Un squelette qui compile, le contrat d'API figé, les types de base, un
-harnais de tests.
+harnais de tests, la CI et le flux gitflow.
 
 **Crates.** `kernel`, `contracts`, `api`, `node`, `harness`, `xtask`.
 
 **Étapes.**
 1. ✅ Workspace Cargo (capacités), lints, édition 2024, DAG de crates, démon `node`.
 2. ✅ `proto/gateway.proto` (contrat client, package `workflow.v1`).
-3. ⬜ Câbler `tonic-build` dans `contracts/build.rs` → générer les types gRPC.
-4. ⬜ `kernel` : identifiants typés (`InstanceId`, `TaskId`…), horloge abstraite,
+3. ✅ `tonic-build` câblé dans `contracts/build.rs` → types gRPC exposés via
+   `contracts::v1` (validé par `docker build` + test `contracts/tests/codegen.rs`).
+4. ✅ Processus : flux **gitflow** (`main`/`develop`/`feature/*`, cf.
+   [CONTRIBUTING](../CONTRIBUTING.md)) + **CI** GitHub Actions (fmt + clippy `-D warnings`
+   + test, avec `protoc`) + premiers tests.
+5. ⬜ `kernel` : identifiants typés (`InstanceId`, `TaskId`…), horloge abstraite,
    helpers de télémétrie.
-5. ⬜ `api` : serveur `tonic` répondant à `Topology` et acceptant
+6. ⬜ `api` : serveur `tonic` répondant à `Topology` et acceptant
    `DeployProcess` / `CreateProcessInstance` contre un **état en mémoire** (stub).
-6. ⬜ `harness` : horloge déterministe + fakes ; premier test d'intégration
+7. ⬜ `harness` : horloge déterministe + fakes ; premier test d'intégration
    bout-en-bout (**M-INTEGRATION-TESTS**).
-7. ⬜ `xtask codegen` : régénère les bindings.
+8. ⬜ `xtask codegen` : régénère les bindings.
 
 **Dépendances externes introduites.** `tonic`, `prost`, `tonic-build`.
 
-**DoD.** `cargo test` vert ; un client gRPC obtient une réponse à `Topology` et peut
+**DoD.** CI verte ; un client gRPC obtient une réponse à `Topology` et peut
 déposer/créer une instance « en mémoire ». Contrat gRPC gelé.
 
 ---

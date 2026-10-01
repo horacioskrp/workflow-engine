@@ -9,5 +9,5 @@ pub use error::Error;
 /// A specialized [`Result`] for this crate's fallible operations.
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 
-pub mod replication;
 pub mod membership;
+pub mod replication;

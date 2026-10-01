@@ -2,6 +2,10 @@
 
 use anyhow::Result;
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "returns errors once client commands are wired"
+)]
 fn main() -> Result<()> {
     // CLI user output goes to stdout; this is not application logging.
     println!("ctl: TODO(phase-0) — wire up client commands");

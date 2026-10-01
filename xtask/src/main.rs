@@ -16,6 +16,10 @@ fn main() -> Result<()> {
 }
 
 /// Regenerates gRPC/protobuf bindings from `proto/`.
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "returns errors once codegen is implemented"
+)]
 fn codegen() -> Result<()> {
     // TODO(phase-0): invoke tonic-build / prost-build here.
     println!("codegen: not yet implemented");

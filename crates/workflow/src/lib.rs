@@ -9,7 +9,7 @@ pub use error::Error;
 /// A specialized [`Result`] for this crate's fallible operations.
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 
-pub mod model;
-pub mod execution;
 pub mod activity;
+pub mod execution;
 pub mod incident;
+pub mod model;

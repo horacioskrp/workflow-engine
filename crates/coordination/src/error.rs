@@ -17,7 +17,10 @@ pub(crate) enum ErrorKind {
 
 impl Error {
     pub(crate) fn new(kind: ErrorKind) -> Self {
-        Self { kind, backtrace: Backtrace::capture() }
+        Self {
+            kind,
+            backtrace: Backtrace::capture(),
+        }
     }
 
     /// Returns an error marking a scaffolded, not-yet-implemented code path.
@@ -27,7 +30,6 @@ impl Error {
     }
 
     /// Returns the backtrace captured when this error was created.
-    #[must_use]
     pub fn backtrace(&self) -> &Backtrace {
         &self.backtrace
     }
@@ -43,7 +45,9 @@ impl fmt::Display for Error {
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Error").field("kind", &self.kind).finish()
+        f.debug_struct("Error")
+            .field("kind", &self.kind)
+            .finish_non_exhaustive()
     }
 }
 
