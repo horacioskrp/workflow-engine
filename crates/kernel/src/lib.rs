@@ -10,5 +10,5 @@ pub use error::Error;
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 
 pub mod ids;
-pub mod time;
 pub mod telemetry;
+pub mod time;

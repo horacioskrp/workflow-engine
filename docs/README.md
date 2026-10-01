@@ -9,10 +9,14 @@ Documentation d'ingénierie du moteur de workflow (Rust).
 
 ## État actuel
 
-**Phase 0 — scaffold livré.** Le workspace Cargo (16 crates), le câblage, les lints,
-le contrat gRPC (`proto/gateway.proto`) et un démon `node` qui démarre sont en place.
-Les crates sont des stubs documentés ; aucune logique métier encore. Le projet compile
-et s'exécute via Docker (voir le [README racine](../README.md)).
+**Phase 0 — en cours.** Le workspace Cargo (16 crates), les lints, le contrat gRPC
+(`proto/gateway.proto`) câblé via tonic-build (`contracts::v1`), un démon `node` qui
+démarre, la **CI** (fmt + clippy + test) et le flux **gitflow** sont en place. Les
+crates métier sont encore des stubs documentés. Le projet compile et s'exécute via
+Docker (voir le [README racine](../README.md)). Suivi détaillé dans
+[roadmap.md](roadmap.md).
+
+Processus de contribution (gitflow + CI) : voir [CONTRIBUTING](../CONTRIBUTING.md).
 
 ## Principe d'organisation
 
