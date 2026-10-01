@@ -7,5 +7,5 @@
 fn generated_messages_are_available() {
     let resp = contracts::v1::TopologyResponse::default();
     assert_eq!(resp.cluster_size, 0);
-    assert!(resp.brokers.is_empty());
+    assert_eq!(resp.partitions_count, 0);
 }
