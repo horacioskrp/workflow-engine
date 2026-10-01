@@ -14,7 +14,7 @@ contracts = { workspace = true }
 workflow = { workspace = true }
 tasks = { workspace = true }
 tonic = { workspace = true }
-tokio-stream = { workspace = true }
+tokio-stream = { workspace = true, features = ["net"] }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt"] }
+tokio = { workspace = true, features = ["macros", "rt", "net", "time"] }
