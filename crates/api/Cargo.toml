@@ -13,3 +13,8 @@ kernel = { workspace = true }
 contracts = { workspace = true }
 workflow = { workspace = true }
 tasks = { workspace = true }
+tonic = { workspace = true }
+tokio-stream = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

@@ -53,6 +53,7 @@ tracing-subscriber = { version = "0.3",  default-features = false }
 tonic       = { version = "0.12" }   # gRPC server/client + generated traits
 prost       = { version = "0.13" }   # protobuf runtime (messages)
 tonic-build = { version = "0.12" }   # proto → Rust codegen (build-dependency)
+tokio-stream = { version = "0.1" }   # stream adapters for gRPC server streaming
 
 # Third-party — reserved for upcoming phases. Versions pinned here for a single
 # source of truth; not referenced by any crate yet, so not compiled until a
