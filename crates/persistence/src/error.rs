@@ -13,6 +13,10 @@ pub struct Error {
 pub(crate) enum ErrorKind {
     /// A code path that is scaffolded but not yet implemented.
     Unimplemented,
+    /// A value could not be serialized for storage.
+    Encode(rmp_serde::encode::Error),
+    /// A stored value could not be deserialized.
+    Decode(rmp_serde::decode::Error),
 }
 
 impl Error {
@@ -37,8 +41,10 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
+        match &self.kind {
             ErrorKind::Unimplemented => f.write_str("operation not yet implemented"),
+            ErrorKind::Encode(error) => write!(f, "failed to encode a value for storage: {error}"),
+            ErrorKind::Decode(error) => write!(f, "failed to decode a stored value: {error}"),
         }
     }
 }
@@ -51,4 +57,24 @@ impl fmt::Debug for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.kind {
+            ErrorKind::Unimplemented => None,
+            ErrorKind::Encode(error) => Some(error),
+            ErrorKind::Decode(error) => Some(error),
+        }
+    }
+}
+
+impl From<rmp_serde::encode::Error> for Error {
+    fn from(error: rmp_serde::encode::Error) -> Self {
+        Self::new(ErrorKind::Encode(error))
+    }
+}
+
+impl From<rmp_serde::decode::Error> for Error {
+    fn from(error: rmp_serde::decode::Error) -> Self {
+        Self::new(ErrorKind::Decode(error))
+    }
+}
