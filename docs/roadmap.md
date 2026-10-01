@@ -7,7 +7,7 @@ Légende : **DoD** = Definition of Done (critère de fin de phase).
 
 ---
 
-## Phase 0 — Socle & contrat  ·  *en cours*
+## Phase 0 — Socle & contrat  ·  *livré*
 
 **Objectif.** Un squelette qui compile, le contrat d'API figé, les types de base, un
 harnais de tests, la CI et le flux gitflow.
@@ -22,20 +22,23 @@ harnais de tests, la CI et le flux gitflow.
 4. ✅ Processus : flux **gitflow** (`main`/`develop`/`feature/*`, cf.
    [CONTRIBUTING](../CONTRIBUTING.md)) + **CI** GitHub Actions (fmt + clippy `-D warnings`
    + test, avec `protoc`) + premiers tests.
-5. ⬜ `kernel` : identifiants typés (`InstanceId`, `TaskId`…), horloge abstraite,
-   helpers de télémétrie.
+5. ✅ `kernel` : identifiants typés (`NodeId`, `PartitionId`, `Key`) + horloge
+   abstraite (`Clock` trait, `Timestamp`, `SystemClock`). La télémétrie = façade
+   `tracing` dans les libs, subscriber installé par les binaires.
 6. ✅ `api` : service `tonic` implémentant le trait `Gateway` — `Topology` répond
    depuis un **état en mémoire** (cluster 1 nœud / 1 partition), les autres RPC
    renvoient `unimplemented`. `node` sert l'API sur `0.0.0.0:26500`. Test unitaire
    async de `Topology`.
-7. ⬜ `harness` : horloge déterministe + fakes ; premier test d'intégration
-   bout-en-bout (**M-INTEGRATION-TESTS**).
-8. ⬜ `xtask codegen` : régénère les bindings.
+7. ✅ `harness` : horloge déterministe `ManualClock` (implémente `kernel::Clock`) +
+   fake `RecordingSink` ; test d'intégration **bout-en-bout** `Topology` client↔serveur
+   gRPC (`api/tests/topology_e2e.rs`, **M-INTEGRATION-TESTS**).
+8. ✅ `xtask codegen` : régénère les bindings en rebâtissant `contracts`.
 
-**Dépendances externes introduites.** `tonic`, `prost`, `tonic-build`.
+**Dépendances externes introduites.** `tonic`, `prost`, `tonic-build`, `tokio-stream`.
 
-**DoD.** CI verte ; un client gRPC obtient une réponse à `Topology` et peut
-déposer/créer une instance « en mémoire ». Contrat gRPC gelé.
+**DoD — atteinte.** CI verte ; un client gRPC obtient une réponse à `Topology` (test
+e2e). Contrat gRPC gelé. (Le `DeployProcess`/`CreateProcessInstance` en mémoire est
+reporté : les capacités réelles arrivent en Phase 3.)
 
 ---
 

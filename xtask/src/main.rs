@@ -2,7 +2,9 @@
 //!
 //! Run via the cargo alias: `cargo xtask <task>`.
 
-use anyhow::{Result, bail};
+use std::process::Command;
+
+use anyhow::{Context, Result, bail};
 
 fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
@@ -15,13 +17,16 @@ fn main() -> Result<()> {
     }
 }
 
-/// Regenerates gRPC/protobuf bindings from `proto/`.
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "returns errors once codegen is implemented"
-)]
+/// Regenerates the gRPC/protobuf bindings by rebuilding `contracts`, whose
+/// `build.rs` compiles `proto/gateway.proto` with tonic-build.
 fn codegen() -> Result<()> {
-    // TODO(phase-0): invoke tonic-build / prost-build here.
-    println!("codegen: not yet implemented");
+    let status = Command::new(env!("CARGO"))
+        .args(["build", "--package", "contracts"])
+        .status()
+        .context("failed to spawn cargo")?;
+    if !status.success() {
+        bail!("contracts codegen build failed ({status})");
+    }
+    println!("codegen: contracts rebuilt — proto bindings regenerated");
     Ok(())
 }
