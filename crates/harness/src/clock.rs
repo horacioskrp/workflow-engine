@@ -5,6 +5,11 @@ use std::sync::atomic::{AtomicI64, Ordering};
 use kernel::time::{Clock, Timestamp};
 
 /// A clock whose time only moves when a test advances it.
+///
+/// Shared across threads (it is a [`Clock`], read by code under test on other
+/// threads while a test advances it), so it uses [`Ordering::SeqCst`]: an
+/// `advance` is always observed by a later `now()` on any thread. The cost is
+/// irrelevant for a test clock.
 #[derive(Debug, Default)]
 pub struct ManualClock {
     millis: AtomicI64,
@@ -21,13 +26,13 @@ impl ManualClock {
 
     /// Advances the clock by `millis` milliseconds.
     pub fn advance(&self, millis: i64) {
-        self.millis.fetch_add(millis, Ordering::Relaxed);
+        self.millis.fetch_add(millis, Ordering::SeqCst);
     }
 }
 
 impl Clock for ManualClock {
     fn now(&self) -> Timestamp {
-        Timestamp::from_millis(self.millis.load(Ordering::Relaxed))
+        Timestamp::from_millis(self.millis.load(Ordering::SeqCst))
     }
 }
 
