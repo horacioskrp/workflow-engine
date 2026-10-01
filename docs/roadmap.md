@@ -42,7 +42,7 @@ reporté : les capacités réelles arrivent en Phase 3.)
 
 ---
 
-## Phase 1 — Persistance
+## Phase 1 — Persistance  ·  *en cours*
 
 **Objectif.** Un socle de stockage durable (état + historique), testable isolément.
 
@@ -51,12 +51,17 @@ reporté : les capacités réelles arrivent en Phase 3.)
 **Étapes.**
 1. ⬜ `persistence::store` : état clé/valeur transactionnel (sur backend embarqué),
    familles typées, itérateurs.
-2. ⬜ `persistence::history` : historique ordonné et append-only des événements,
-   lecture séquentielle, reprise sur position.
+2. 🟡 `persistence::history` : seam `History` (trait) + `Position`/`HistoryEntry` +
+   impl **en mémoire** `MemoryHistory` (append monotone, `read_from`, `last_position`),
+   testés. **Reste** : backend durable (segments sur disque, fsync, reprise après crash).
 3. ⬜ `persistence::snapshot` : snapshot cohérent de l'état + position d'historique
    associée ; compaction liée.
 4. ⬜ Tests : « rejouer l'historique reconstruit exactement l'état » ; recovery après
    arrêt brutal simulé.
+
+**Approche incrémentale.** On livre d'abord les abstractions + impl en mémoire
+(testables sans toolchain C), puis le backend durable `rocksdb`/segments. L'impl mémoire
+sert aussi de fake pour les phases suivantes (cf. `harness`).
 
 **Dépendances externes introduites.** `rocksdb` (toolchain C au build — géré via Docker/WSL).
 
