@@ -57,8 +57,10 @@ reporté : les capacités réelles arrivent en Phase 3.)
 2. 🟡 `persistence::history` : seam `History` (trait) + `Position`/`HistoryEntry` +
    impl **en mémoire** `MemoryHistory` (append monotone, `read_from`, `last_position`),
    testés. **Reste** : backend durable (segments sur disque, fsync, reprise après crash).
-3. ⬜ `persistence::snapshot` : snapshot cohérent de l'état + position d'historique
-   associée ; compaction liée.
+3. 🟡 `persistence::snapshot` : `capture`/`restore` cohérents de l'état + `Position`
+   d'historique associée ; **compaction liée** via `History::prune_through` ;
+   `Store::columns()` pour énumérer les familles. Testé en mémoire. **Reste** :
+   sérialisation on-disk du snapshot (avec le backend durable).
 4. ⬜ Tests : « rejouer l'historique reconstruit exactement l'état » ; recovery après
    arrêt brutal simulé.
 

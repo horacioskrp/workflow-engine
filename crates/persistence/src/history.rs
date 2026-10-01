@@ -68,6 +68,14 @@ pub trait History {
 
     /// Returns the last committed position, or [`Position::START`] when empty.
     fn last_position(&self) -> Position;
+
+    /// Drops every entry at a position `<= through`, keeping later ones.
+    ///
+    /// Used for compaction once state through `through` is captured in a snapshot.
+    ///
+    /// # Errors
+    /// Returns an error if the underlying store cannot be pruned.
+    fn prune_through(&mut self, through: Position) -> Result<()>;
 }
 
 /// An in-memory [`History`] for tests and early development.
@@ -107,6 +115,11 @@ impl History for MemoryHistory {
 
     fn last_position(&self) -> Position {
         Position(self.last)
+    }
+
+    fn prune_through(&mut self, through: Position) -> Result<()> {
+        self.entries.retain(|entry| entry.position > through);
+        Ok(())
     }
 }
 
